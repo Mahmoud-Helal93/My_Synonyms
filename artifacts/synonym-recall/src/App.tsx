@@ -1,19 +1,50 @@
 import { useState } from "react";
 import SetupPage from "@/pages/SetupPage";
 import FlashcardPage from "@/pages/FlashcardPage";
-import { type SessionConfig } from "@/types/session";
+import ResultsPage from "@/pages/ResultsPage";
+import { type SessionConfig, type CardResult, DEFAULT_CONFIG } from "@/types/session";
+import { type FlashCard } from "@/data/flashcards";
+
+type Screen =
+  | { view: "setup" }
+  | { view: "session"; config: SessionConfig; prebuiltDeck?: FlashCard[] }
+  | { view: "results"; results: CardResult[]; config: SessionConfig };
 
 export default function App() {
-  const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null);
+  const [screen, setScreen] = useState<Screen>({ view: "setup" });
 
-  if (sessionConfig) {
+  if (screen.view === "session") {
     return (
       <FlashcardPage
-        config={sessionConfig}
-        onBack={() => setSessionConfig(null)}
+        config={screen.config}
+        prebuiltDeck={screen.prebuiltDeck}
+        onBack={() => setScreen({ view: "setup" })}
+        onFinish={(results) =>
+          setScreen({ view: "results", results, config: screen.config })
+        }
       />
     );
   }
 
-  return <SetupPage onStart={(config) => setSessionConfig(config)} />;
+  if (screen.view === "results") {
+    const { results, config } = screen;
+    return (
+      <ResultsPage
+        results={results}
+        onReviewMissed={(missedCards) =>
+          setScreen({ view: "session", config, prebuiltDeck: missedCards })
+        }
+        onNewSession={() =>
+          setScreen({ view: "session", config })
+        }
+        onBackToSetup={() => setScreen({ view: "setup" })}
+      />
+    );
+  }
+
+  return (
+    <SetupPage
+      onStart={(config) => setScreen({ view: "session", config })}
+    />
+  );
 }

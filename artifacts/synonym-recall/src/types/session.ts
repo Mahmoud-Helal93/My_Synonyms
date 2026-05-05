@@ -1,3 +1,5 @@
+import { type FlashCard } from "@/data/flashcards";
+
 export type CardTypeFilter =
   | "all"
   | "definitions"
@@ -24,3 +26,9 @@ export const DEFAULT_CONFIG: SessionConfig = {
   cardCount: "all",
   shuffle: true,
 };
+
+export interface CardResult {
+  card: FlashCard;
+  correct: boolean;
+  chosen: string;
+}
