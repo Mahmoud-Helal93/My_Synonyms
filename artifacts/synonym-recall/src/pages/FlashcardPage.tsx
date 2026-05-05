@@ -12,6 +12,7 @@ import {
 import { type FlashCard } from "@/data/flashcards";
 import { type SessionConfig, type CardResult } from "@/types/session";
 import { buildSession } from "@/utils/filterCards";
+import { loadProgress, recordAnswer, saveProgress } from "@/utils/progress";
 
 type AnswerState = "unanswered" | "correct" | "incorrect";
 
@@ -88,6 +89,7 @@ export default function FlashcardPage({ config, prebuiltDeck, onBack, onFinish }
     deck.length > 0 ? buildChoices(deck[0]) : ["—", "—"]
   );
   const [results, setResults] = useState<CardResult[]>([]);
+  const [progressStore, setProgressStore] = useState(() => loadProgress());
 
   const total = deck.length;
   const card = deck[currentIndex];
@@ -104,6 +106,11 @@ export default function FlashcardPage({ config, prebuiltDeck, onBack, onFinish }
       const isCorrect = chosen === card.correctWord;
       setAnswerState(isCorrect ? "correct" : "incorrect");
       setResults((prev) => [...prev, { card, correct: isCorrect, chosen }]);
+      setProgressStore((prev) => {
+        const updated = recordAnswer(prev, card.id, isCorrect);
+        saveProgress(updated);
+        return updated;
+      });
     },
     [answerState, card]
   );

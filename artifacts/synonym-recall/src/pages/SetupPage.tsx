@@ -10,6 +10,7 @@ import {
   ChevronRight,
   CheckSquare,
   Square,
+  BarChart2,
 } from "lucide-react";
 import { mission1Set1 } from "@/data/vocab";
 import {
@@ -22,6 +23,7 @@ import { computeSummary } from "@/utils/filterCards";
 
 interface Props {
   onStart: (config: SessionConfig) => void;
+  onViewProgress: () => void;
 }
 
 const CARD_TYPE_OPTIONS: { value: CardTypeFilter; label: string; icon: React.ReactNode }[] = [
@@ -47,7 +49,7 @@ const COUNT_OPTIONS: { value: number | "all"; label: string }[] = [
 
 const ALL_WORDS = mission1Set1.map((v) => v.word);
 
-export default function SetupPage({ onStart }: Props) {
+export default function SetupPage({ onStart, onViewProgress }: Props) {
   const [cardTypeFilter, setCardTypeFilter] = useState<CardTypeFilter>(DEFAULT_CONFIG.cardTypeFilter);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(DEFAULT_CONFIG.statusFilter);
   const [selectedWords, setSelectedWords] = useState<string[]>([]);
@@ -94,9 +96,19 @@ export default function SetupPage({ onStart }: Props) {
     >
       <div className="w-full max-w-sm px-4 pt-8 pb-10 flex flex-col gap-5">
         {/* Header */}
-        <div className="text-center mb-1">
-          <h1 className="text-white text-2xl font-black tracking-tight">Synonym Recall</h1>
-          <p className="text-white/70 text-sm mt-1">Mission 1 · Set 1</p>
+        <div className="flex items-center justify-between mb-1">
+          <div>
+            <h1 className="text-white text-2xl font-black tracking-tight">Synonym Recall</h1>
+            <p className="text-white/70 text-sm mt-0.5">Mission 1 · Set 1</p>
+          </div>
+          <button
+            data-testid="button-progress"
+            onClick={onViewProgress}
+            className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 active:bg-white/40 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors"
+          >
+            <BarChart2 className="w-4 h-4" />
+            Progress
+          </button>
         </div>
 
         {/* Card Type */}
