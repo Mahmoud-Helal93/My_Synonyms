@@ -94,3 +94,23 @@ export function saveMuted(muted: boolean): void {
     // ignore
   }
 }
+
+export const AUTO_SPEAK_STORAGE_KEY = "synonym-recall-auto-speak";
+
+/** Default ON — returns true unless the user explicitly saved false */
+export function loadAutoSpeak(): boolean {
+  try {
+    const stored = localStorage.getItem(AUTO_SPEAK_STORAGE_KEY);
+    return stored === null ? true : stored === "true";
+  } catch {
+    return true;
+  }
+}
+
+export function saveAutoSpeak(value: boolean): void {
+  try {
+    localStorage.setItem(AUTO_SPEAK_STORAGE_KEY, String(value));
+  } catch {
+    // ignore
+  }
+}

@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   Volume2,
   VolumeX,
+  AudioLines,
   Lightbulb,
   CheckCircle2,
   XCircle,
@@ -26,6 +27,8 @@ import {
   playFailure,
   loadMuted,
   saveMuted,
+  loadAutoSpeak,
+  saveAutoSpeak,
 } from "@/utils/audio";
 
 type AnswerState = "unanswered" | "correct" | "incorrect";
@@ -99,6 +102,8 @@ export default function FlashcardPage({ config, prebuiltDeck, onBack, onFinish }
   const [showHint, setShowHint]         = useState(false);
   const [showKbHelp, setShowKbHelp]     = useState(false);
   const [muted, setMuted]               = useState(() => loadMuted());
+  const [autoSpeak, setAutoSpeak]       = useState(() => loadAutoSpeak());
+  const autoSpeakTimer                  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [choices, setChoices]           = useState<[string, string]>(() =>
     deck.length > 0 ? buildChoices(deck[0]) : ["—", "—"]
   );
@@ -135,12 +140,27 @@ export default function FlashcardPage({ config, prebuiltDeck, onBack, onFinish }
   const handleNext = useCallback(() => {
     if (isLastCard) { onFinish(results); return; }
     const next = currentIndex + 1;
+    const nextCard = deck[next];
     setCurrentIndex(next);
     setAnswerState("unanswered");
     setSelectedAnswer(null);
     setShowHint(false);
-    setChoices(buildChoices(deck[next]));
-  }, [isLastCard, currentIndex, deck, results, onFinish]);
+    setChoices(buildChoices(nextCard));
+    // Auto-pronounce: speak after card-enter animation settles (280 ms)
+    if (autoSpeakTimer.current) clearTimeout(autoSpeakTimer.current);
+    if (!muted && autoSpeak) {
+      const word = nextCard.cardType === "Definition"
+        ? nextCard.correctWord
+        : nextCard.promptText;
+      autoSpeakTimer.current = setTimeout(() => speak(word), 280);
+    }
+  }, [isLastCard, currentIndex, deck, results, onFinish, muted, autoSpeak]);
+
+  // ── Cancel auto-speak timer on unmount ──────────────────────────────────────
+  useEffect(() => () => {
+    if (autoSpeakTimer.current) clearTimeout(autoSpeakTimer.current);
+    window.speechSynthesis?.cancel();
+  }, []);
 
   // ── Keyboard shortcuts ──────────────────────────────────────────────────────
   // Use refs so the effect doesn't need to re-register on every render
@@ -225,8 +245,25 @@ export default function FlashcardPage({ config, prebuiltDeck, onBack, onFinish }
             )}
           </div>
 
-          {/* Right controls: mute + keyboard help */}
+          {/* Right controls: auto-speak + mute + keyboard help */}
           <div className="flex items-center gap-1.5">
+            {/* Auto-pronounce toggle */}
+            <button
+              data-testid="button-auto-speak"
+              onClick={() => {
+                const next = !autoSpeak;
+                setAutoSpeak(next);
+                saveAutoSpeak(next);
+              }}
+              title={autoSpeak ? "Auto-pronounce ON (tap to turn off)" : "Auto-pronounce OFF (tap to turn on)"}
+              className={`w-9 h-9 flex items-center justify-center rounded-full transition-colors active:scale-90 ${
+                autoSpeak
+                  ? "bg-white/30 hover:bg-white/40"
+                  : "bg-white/10 hover:bg-white/20"
+              }`}>
+              <AudioLines className={`w-4 h-4 ${autoSpeak ? "text-white" : "text-white/40"}`} />
+            </button>
+            {/* Mute toggle */}
             <button
               data-testid="button-mute"
               onClick={() => {
@@ -240,6 +277,7 @@ export default function FlashcardPage({ config, prebuiltDeck, onBack, onFinish }
                 ? <VolumeX className="w-4 h-4 text-white/60" />
                 : <Volume2 className="w-4 h-4 text-white" />}
             </button>
+            {/* Keyboard shortcut help */}
             <button
               onClick={() => setShowKbHelp((v) => !v)}
               title="Keyboard shortcuts"
