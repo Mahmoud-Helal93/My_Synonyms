@@ -1,22 +1,19 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { useState } from "react";
+import SetupPage from "@/pages/SetupPage";
 import FlashcardPage from "@/pages/FlashcardPage";
-import NotFound from "@/pages/not-found";
+import { type SessionConfig } from "@/types/session";
 
-function Router() {
-  return (
-    <Switch>
-      <Route path="/" component={FlashcardPage} />
-      <Route component={NotFound} />
-    </Switch>
-  );
+export default function App() {
+  const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null);
+
+  if (sessionConfig) {
+    return (
+      <FlashcardPage
+        config={sessionConfig}
+        onBack={() => setSessionConfig(null)}
+      />
+    );
+  }
+
+  return <SetupPage onStart={(config) => setSessionConfig(config)} />;
 }
-
-function App() {
-  return (
-    <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-      <Router />
-    </WouterRouter>
-  );
-}
-
-export default App;

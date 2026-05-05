@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   ArrowLeft,
   Volume2,
@@ -7,8 +7,11 @@ import {
   XCircle,
   ChevronRight,
   RotateCcw,
+  Settings2,
 } from "lucide-react";
-import { allCards, shuffleCards, type FlashCard } from "@/data/flashcards";
+import { type FlashCard } from "@/data/flashcards";
+import { type SessionConfig } from "@/types/session";
+import { buildSession } from "@/utils/filterCards";
 
 type AnswerState = "unanswered" | "correct" | "incorrect";
 
@@ -55,18 +58,20 @@ function buildChoices(card: FlashCard): [string, string] {
     : [card.incorrectWord, card.correctWord];
 }
 
-function initDeck(): FlashCard[] {
-  return shuffleCards(allCards);
+interface Props {
+  config: SessionConfig;
+  onBack: () => void;
 }
 
-export default function FlashcardPage() {
-  const [deck] = useState<FlashCard[]>(initDeck);
+export default function FlashcardPage({ config, onBack }: Props) {
+  const deck = useMemo(() => buildSession(config), [config]);
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answerState, setAnswerState] = useState<AnswerState>("unanswered");
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showHint, setShowHint] = useState(false);
   const [choices, setChoices] = useState<[string, string]>(() =>
-    buildChoices(initDeck()[0])
+    deck.length > 0 ? buildChoices(deck[0]) : ["—", "—"]
   );
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [finished, setFinished] = useState(false);
@@ -101,9 +106,28 @@ export default function FlashcardPage() {
     setChoices(buildChoices(deck[nextIndex]));
   }, [currentIndex, total, deck]);
 
-  const handleRestart = useCallback(() => {
-    window.location.reload();
-  }, []);
+  if (total === 0) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center px-4"
+        style={{ background: "linear-gradient(160deg, #22c55e 0%, #16a34a 100%)" }}
+      >
+        <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 flex flex-col items-center gap-4 text-center">
+          <p className="text-2xl font-bold text-gray-900">No Cards Found</p>
+          <p className="text-gray-500 text-sm">
+            Your current filters returned no cards. Try adjusting them.
+          </p>
+          <button
+            onClick={onBack}
+            className="w-full flex items-center justify-center gap-2 bg-green-500 text-white font-bold rounded-2xl py-4"
+          >
+            <Settings2 className="w-5 h-5" />
+            Change Filters
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (finished) {
     const pct = Math.round((score.correct / score.total) * 100);
@@ -113,7 +137,7 @@ export default function FlashcardPage() {
         style={{ background: "linear-gradient(160deg, #22c55e 0%, #16a34a 100%)" }}
         data-testid="finished-screen"
       >
-        <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 flex flex-col items-center gap-6">
+        <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 flex flex-col items-center gap-5">
           <div className="text-5xl font-black text-green-600">{pct}%</div>
           <div className="text-center">
             <p className="text-2xl font-bold text-gray-900">Session Complete!</p>
@@ -134,14 +158,32 @@ export default function FlashcardPage() {
               ? "Good effort! Keep practicing these words."
               : "Keep going — repetition builds mastery."}
           </p>
-          <button
-            data-testid="button-restart"
-            onClick={handleRestart}
-            className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-semibold rounded-2xl py-4 transition-colors"
-          >
-            <RotateCcw className="w-5 h-5" />
-            Start Over
-          </button>
+          <div className="flex flex-col gap-2 w-full">
+            <button
+              data-testid="button-restart"
+              onClick={() => {
+                setCurrentIndex(0);
+                setAnswerState("unanswered");
+                setSelectedAnswer(null);
+                setShowHint(false);
+                setChoices(buildChoices(deck[0]));
+                setScore({ correct: 0, total: 0 });
+                setFinished(false);
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-2xl py-3.5 transition-colors"
+            >
+              <RotateCcw className="w-5 h-5" />
+              Restart Session
+            </button>
+            <button
+              data-testid="button-change-filters"
+              onClick={onBack}
+              className="w-full flex items-center justify-center gap-2 border-2 border-green-200 text-green-700 font-semibold rounded-2xl py-3.5 hover:bg-green-50 transition-colors"
+            >
+              <Settings2 className="w-5 h-5" />
+              Change Filters
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -171,14 +213,12 @@ export default function FlashcardPage() {
         <div className="flex items-center justify-between py-4">
           <button
             data-testid="button-back"
+            onClick={onBack}
             className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 active:bg-white/40 transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-white" />
           </button>
-          <span
-            className="text-white/80 text-sm font-medium"
-            data-testid="text-progress"
-          >
+          <span className="text-white/80 text-sm font-medium" data-testid="text-progress">
             {currentIndex + 1} / {total}
           </span>
           <div className="w-9 h-9" />
@@ -201,7 +241,7 @@ export default function FlashcardPage() {
             style={{ zIndex: 2, minHeight: "290px" }}
             data-testid="flashcard"
           >
-            {/* Top row: pill + status badge */}
+            {/* Pill + status */}
             <div className="flex items-center gap-2 flex-wrap justify-center">
               <span
                 className={`text-xs font-semibold px-3 py-1 rounded-full ${getPillStyle(card.cardType)}`}
@@ -217,7 +257,7 @@ export default function FlashcardPage() {
               </span>
             </div>
 
-            {/* Card content */}
+            {/* Content */}
             <div className="flex-1 flex items-center justify-center w-full">
               <p
                 className={`text-center font-bold text-gray-900 leading-snug ${
@@ -263,21 +303,14 @@ export default function FlashcardPage() {
                     : "bg-gray-100 hover:bg-gray-200 active:bg-gray-300"
                 }`}
               >
-                <Lightbulb
-                  className={`w-5 h-5 ${
-                    showHint ? "text-amber-500" : "text-gray-600"
-                  }`}
-                />
+                <Lightbulb className={`w-5 h-5 ${showHint ? "text-amber-500" : "text-gray-600"}`} />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Question prompt */}
-        <p
-          className="text-white text-center text-base font-medium mb-5"
-          data-testid="text-question"
-        >
+        {/* Question */}
+        <p className="text-white text-center text-base font-medium mb-5" data-testid="text-question">
           {getQuestionPrompt(card)}
         </p>
 
@@ -333,11 +366,9 @@ export default function FlashcardPage() {
               {choices.map((word, i) => {
                 const isCorrect = word === card.correctWord;
                 const isSelected = selectedAnswer === word;
-                let cls =
-                  "flex-1 rounded-2xl py-4 px-3 text-sm font-semibold text-center ";
+                let cls = "flex-1 rounded-2xl py-4 px-3 text-sm font-semibold text-center ";
                 if (isCorrect) cls += "bg-green-500 text-white shadow-md";
-                else if (isSelected)
-                  cls += "bg-red-400 text-white shadow-md";
+                else if (isSelected) cls += "bg-red-400 text-white shadow-md";
                 else cls += "bg-white/30 text-white/70";
                 return (
                   <div key={i} className={cls}>
@@ -347,8 +378,7 @@ export default function FlashcardPage() {
               })}
             </div>
 
-            {/* "or" between choices — overlay approach via wrapper */}
-            <div className="flex items-center gap-3 -mt-[3.4rem] pointer-events-none px-0">
+            <div className="flex items-center gap-3 -mt-[3.4rem] pointer-events-none">
               <div className="flex-1" />
               <span className="text-white font-semibold text-sm shrink-0">or</span>
               <div className="flex-1" />
@@ -370,28 +400,19 @@ export default function FlashcardPage() {
         <div className="mt-auto pt-6 flex justify-center gap-6">
           <div className="text-center">
             <p className="text-white/60 text-xs">Correct</p>
-            <p
-              className="text-white font-bold text-lg"
-              data-testid="text-score-correct"
-            >
+            <p className="text-white font-bold text-lg" data-testid="text-score-correct">
               {score.correct}
             </p>
           </div>
           <div className="text-center">
             <p className="text-white/60 text-xs">Attempted</p>
-            <p
-              className="text-white font-bold text-lg"
-              data-testid="text-score-total"
-            >
+            <p className="text-white font-bold text-lg" data-testid="text-score-total">
               {score.total}
             </p>
           </div>
           <div className="text-center">
             <p className="text-white/60 text-xs">Remaining</p>
-            <p
-              className="text-white font-bold text-lg"
-              data-testid="text-score-remaining"
-            >
+            <p className="text-white font-bold text-lg" data-testid="text-score-remaining">
               {total - currentIndex}
             </p>
           </div>
