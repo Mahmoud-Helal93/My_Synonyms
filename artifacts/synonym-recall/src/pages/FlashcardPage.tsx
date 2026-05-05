@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   ArrowLeft,
   Volume2,
+  VolumeX,
   Lightbulb,
   CheckCircle2,
   XCircle,
@@ -20,6 +21,12 @@ import {
   masteryBg,
   masteryLabel,
 } from "@/utils/progress";
+import {
+  playSuccess,
+  playFailure,
+  loadMuted,
+  saveMuted,
+} from "@/utils/audio";
 
 type AnswerState = "unanswered" | "correct" | "incorrect";
 
@@ -91,6 +98,7 @@ export default function FlashcardPage({ config, prebuiltDeck, onBack, onFinish }
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showHint, setShowHint]         = useState(false);
   const [showKbHelp, setShowKbHelp]     = useState(false);
+  const [muted, setMuted]               = useState(() => loadMuted());
   const [choices, setChoices]           = useState<[string, string]>(() =>
     deck.length > 0 ? buildChoices(deck[0]) : ["—", "—"]
   );
@@ -113,6 +121,7 @@ export default function FlashcardPage({ config, prebuiltDeck, onBack, onFinish }
       const isCorrect = chosen === card.correctWord;
       setSelectedAnswer(chosen);
       setAnswerState(isCorrect ? "correct" : "incorrect");
+      if (!muted) { if (isCorrect) void playSuccess(); else void playFailure(); }
       setResults((prev) => [...prev, { card, correct: isCorrect, chosen }]);
       setProgressStore((prev) => {
         const updated = recordAnswer(prev, card.id, isCorrect);
@@ -216,13 +225,28 @@ export default function FlashcardPage({ config, prebuiltDeck, onBack, onFinish }
             )}
           </div>
 
-          {/* Keyboard shortcut toggle */}
-          <button
-            onClick={() => setShowKbHelp((v) => !v)}
-            title="Keyboard shortcuts"
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors active:scale-90">
-            <Keyboard className="w-4 h-4 text-white" />
-          </button>
+          {/* Right controls: mute + keyboard help */}
+          <div className="flex items-center gap-1.5">
+            <button
+              data-testid="button-mute"
+              onClick={() => {
+                const next = !muted;
+                setMuted(next);
+                saveMuted(next);
+              }}
+              title={muted ? "Unmute sounds" : "Mute sounds"}
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors active:scale-90">
+              {muted
+                ? <VolumeX className="w-4 h-4 text-white/60" />
+                : <Volume2 className="w-4 h-4 text-white" />}
+            </button>
+            <button
+              onClick={() => setShowKbHelp((v) => !v)}
+              title="Keyboard shortcuts"
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors active:scale-90">
+              <Keyboard className="w-4 h-4 text-white" />
+            </button>
+          </div>
         </div>
 
         {/* ── Keyboard shortcut tooltip ── */}
