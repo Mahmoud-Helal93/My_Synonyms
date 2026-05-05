@@ -11,6 +11,7 @@ import {
   CheckSquare,
   Square,
   BarChart2,
+  Check,
 } from "lucide-react";
 import { mission1Set1 } from "@/data/vocab";
 import {
@@ -27,35 +28,35 @@ interface Props {
 }
 
 const CARD_TYPE_OPTIONS: { value: CardTypeFilter; label: string; icon: React.ReactNode }[] = [
-  { value: "all", label: "All Cards", icon: <Layers className="w-4 h-4" /> },
-  { value: "definitions", label: "Definitions Only", icon: <BookOpen className="w-4 h-4" /> },
-  { value: "synonyms", label: "Synonyms Only", icon: <Repeat2 className="w-4 h-4" /> },
-  { value: "antonyms", label: "Antonyms Only", icon: <ArrowLeftRight className="w-4 h-4" /> },
+  { value: "all",               label: "All Cards",           icon: <Layers className="w-4 h-4" /> },
+  { value: "definitions",       label: "Definitions Only",    icon: <BookOpen className="w-4 h-4" /> },
+  { value: "synonyms",          label: "Synonyms Only",       icon: <Repeat2 className="w-4 h-4" /> },
+  { value: "antonyms",          label: "Antonyms Only",       icon: <ArrowLeftRight className="w-4 h-4" /> },
   { value: "synonyms-antonyms", label: "Synonyms + Antonyms", icon: <Sparkles className="w-4 h-4" /> },
 ];
 
 const STATUS_OPTIONS: { value: StatusFilter; label: string; desc: string }[] = [
-  { value: "all", label: "All", desc: "Every card" },
-  { value: "new", label: "New Only", desc: "Focus on unfamiliar words" },
-  { value: "old", label: "Old Only", desc: "Review familiar words" },
+  { value: "all", label: "All",      desc: "Every card" },
+  { value: "new", label: "New Only", desc: "Focus on unfamiliar" },
+  { value: "old", label: "Old Only", desc: "Review familiar" },
 ];
 
-const COUNT_OPTIONS: { value: number | "all"; label: string }[] = [
-  { value: "all", label: "All available" },
-  { value: 10, label: "10 cards" },
-  { value: 20, label: "20 cards" },
-  { value: "custom", label: "Custom" } as unknown as { value: number | "all"; label: string },
+const COUNT_OPTIONS: { value: "all" | 10 | 20 | "custom"; label: string }[] = [
+  { value: "all",    label: "All available" },
+  { value: 10,       label: "10 cards" },
+  { value: 20,       label: "20 cards" },
+  { value: "custom", label: "Custom" },
 ];
 
 const ALL_WORDS = mission1Set1.map((v) => v.word);
 
 export default function SetupPage({ onStart, onViewProgress }: Props) {
   const [cardTypeFilter, setCardTypeFilter] = useState<CardTypeFilter>(DEFAULT_CONFIG.cardTypeFilter);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(DEFAULT_CONFIG.statusFilter);
-  const [selectedWords, setSelectedWords] = useState<string[]>([]);
-  const [countOption, setCountOption] = useState<"all" | 10 | 20 | "custom">("all");
-  const [customCount, setCustomCount] = useState<string>("15");
-  const [shuffle, setShuffle] = useState(true);
+  const [statusFilter,   setStatusFilter]   = useState<StatusFilter>(DEFAULT_CONFIG.statusFilter);
+  const [selectedWords,  setSelectedWords]  = useState<string[]>([]);
+  const [countOption,    setCountOption]    = useState<"all" | 10 | 20 | "custom">("all");
+  const [customCount,    setCustomCount]    = useState("15");
+  const [shuffle,        setShuffle]        = useState(true);
 
   const config: SessionConfig = useMemo(() => {
     let cardCount: number | "all" = "all";
@@ -65,114 +66,104 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
     } else if (countOption !== "all") {
       cardCount = countOption;
     }
-    return {
-      cardTypeFilter,
-      statusFilter,
-      selectedWords,
-      cardCount,
-      shuffle,
-    };
+    return { cardTypeFilter, statusFilter, selectedWords, cardCount, shuffle };
   }, [cardTypeFilter, statusFilter, selectedWords, countOption, customCount, shuffle]);
 
-  const summary = useMemo(() => computeSummary(config), [config]);
+  const summary  = useMemo(() => computeSummary(config), [config]);
+  const canStart = summary.totalInSession > 0;
 
-  const toggleWord = (word: string) => {
+  const toggleWord = (word: string) =>
     setSelectedWords((prev) =>
       prev.includes(word) ? prev.filter((w) => w !== word) : [...prev, word]
     );
-  };
 
-  const toggleAllWords = () => {
+  const toggleAllWords = () =>
     setSelectedWords((prev) => (prev.length === ALL_WORDS.length ? [] : [...ALL_WORDS]));
-  };
-
-  const canStart = summary.totalInSession > 0;
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-start"
-      style={{ background: "linear-gradient(160deg, #22c55e 0%, #16a34a 100%)" }}
+      className="min-h-screen flex flex-col items-center animate-fade-in"
+      style={{ background: "linear-gradient(160deg,#22c55e 0%,#16a34a 100%)" }}
       data-testid="setup-page"
     >
-      <div className="w-full max-w-sm px-4 pt-8 pb-10 flex flex-col gap-5">
+      <div className="w-full max-w-sm px-4 pt-7 pb-10 flex flex-col gap-5">
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-white text-2xl font-black tracking-tight">Synonym Recall</h1>
-            <p className="text-white/70 text-sm mt-0.5">Mission 1 · Set 1</p>
+            <h1 className="text-white text-2xl font-black tracking-tight leading-tight">
+              Synonym Recall
+            </h1>
+            <p className="text-white/60 text-sm mt-0.5">Mission 1 · Set 1</p>
           </div>
           <button
             data-testid="button-progress"
             onClick={onViewProgress}
-            className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 active:bg-white/40 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors"
+            className="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 active:bg-white/40 text-white text-xs font-semibold px-3.5 py-2.5 rounded-xl transition-all active:scale-95"
           >
-            <BarChart2 className="w-4 h-4" />
+            <BarChart2 className="w-3.5 h-3.5" />
             Progress
           </button>
         </div>
 
         {/* Card Type */}
-        <Section title="Card Type">
+        <FilterSection title="Card Type">
           <div className="flex flex-col gap-2">
-            {CARD_TYPE_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                data-testid={`filter-type-${opt.value}`}
-                onClick={() => setCardTypeFilter(opt.value)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all ${
-                  cardTypeFilter === opt.value
-                    ? "bg-green-600 text-white shadow-md"
-                    : "bg-white/90 text-gray-700 hover:bg-white"
-                }`}
-              >
-                <span className={cardTypeFilter === opt.value ? "text-white" : "text-green-600"}>
-                  {opt.icon}
-                </span>
-                {opt.label}
-                {cardTypeFilter === opt.value && (
-                  <span className="ml-auto w-2 h-2 rounded-full bg-white/70" />
-                )}
-              </button>
-            ))}
+            {CARD_TYPE_OPTIONS.map((opt) => {
+              const active = cardTypeFilter === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  data-testid={`filter-type-${opt.value}`}
+                  onClick={() => setCardTypeFilter(opt.value)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium transition-all active:scale-[0.98] ${
+                    active ? "bg-white/25 text-white shadow-inner" : "bg-white/90 text-gray-700 hover:bg-white"
+                  }`}
+                >
+                  <span className={active ? "text-white" : "text-green-600"}>{opt.icon}</span>
+                  {opt.label}
+                  {active && <Check className="ml-auto w-4 h-4 text-white/80" />}
+                </button>
+              );
+            })}
           </div>
-        </Section>
+        </FilterSection>
 
         {/* Status Filter */}
-        <Section title="Status Filter">
+        <FilterSection title="Status">
           <div className="grid grid-cols-3 gap-2">
-            {STATUS_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                data-testid={`filter-status-${opt.value}`}
-                onClick={() => setStatusFilter(opt.value)}
-                className={`flex flex-col items-center py-3 px-2 rounded-2xl text-xs font-semibold transition-all ${
-                  statusFilter === opt.value
-                    ? "bg-green-600 text-white shadow-md"
-                    : "bg-white/90 text-gray-700 hover:bg-white"
-                }`}
-              >
-                <span className="font-bold text-sm">{opt.label}</span>
-                <span className={`text-center mt-0.5 leading-tight ${statusFilter === opt.value ? "text-white/80" : "text-gray-400"}`}>
-                  {opt.desc}
-                </span>
-              </button>
-            ))}
+            {STATUS_OPTIONS.map((opt) => {
+              const active = statusFilter === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  data-testid={`filter-status-${opt.value}`}
+                  onClick={() => setStatusFilter(opt.value)}
+                  className={`flex flex-col items-center py-3 px-2 rounded-2xl text-xs font-semibold transition-all active:scale-95 ${
+                    active ? "bg-white/25 text-white" : "bg-white/90 text-gray-700 hover:bg-white"
+                  }`}
+                >
+                  <span className="font-bold text-sm">{opt.label}</span>
+                  <span className={`mt-0.5 text-center leading-tight ${active ? "text-white/70" : "text-gray-400"}`}>
+                    {opt.desc}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        </Section>
+        </FilterSection>
 
         {/* Word Filter */}
-        <Section title="Word Filter">
+        <FilterSection title="Words">
           <div className="flex flex-col gap-2">
             <button
               data-testid="filter-words-toggle-all"
               onClick={toggleAllWords}
-              className="flex items-center gap-2 text-sm font-semibold text-green-700 bg-white/90 hover:bg-white rounded-2xl px-4 py-2.5 transition-all"
+              className="flex items-center gap-2 text-sm font-semibold text-green-700 bg-white/90 hover:bg-white rounded-2xl px-4 py-2.5 transition-all active:scale-[0.98]"
             >
-              {selectedWords.length === ALL_WORDS.length ? (
-                <CheckSquare className="w-4 h-4 text-green-600" />
-              ) : (
-                <Square className="w-4 h-4 text-gray-400" />
-              )}
+              {selectedWords.length === ALL_WORDS.length
+                ? <CheckSquare className="w-4 h-4 text-green-600" />
+                : <Square className="w-4 h-4 text-gray-400" />}
               {selectedWords.length === 0
                 ? "All words (default)"
                 : selectedWords.length === ALL_WORDS.length
@@ -187,10 +178,8 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
                     key={word}
                     data-testid={`filter-word-${word}`}
                     onClick={() => toggleWord(word)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                      active
-                        ? "bg-green-600 text-white shadow-sm"
-                        : "bg-white/90 text-gray-600 hover:bg-white"
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
+                      active ? "bg-white/30 text-white" : "bg-white/90 text-gray-600 hover:bg-white"
                     }`}
                   >
                     {word}
@@ -199,33 +188,30 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
               })}
             </div>
           </div>
-        </Section>
+        </FilterSection>
 
-        {/* Number of Cards */}
-        <Section title="Number of Cards">
+        {/* Number of cards */}
+        <FilterSection title="Cards">
           <div className="grid grid-cols-2 gap-2">
             {COUNT_OPTIONS.map((opt) => {
-              const val = opt.value as "all" | 10 | 20 | "custom";
+              const active = countOption === opt.value;
               return (
                 <button
                   key={String(opt.value)}
                   data-testid={`filter-count-${String(opt.value)}`}
-                  onClick={() => setCountOption(val)}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold transition-all ${
-                    countOption === val
-                      ? "bg-green-600 text-white shadow-md"
-                      : "bg-white/90 text-gray-700 hover:bg-white"
+                  onClick={() => setCountOption(opt.value)}
+                  className={`flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-semibold transition-all active:scale-95 ${
+                    active ? "bg-white/25 text-white" : "bg-white/90 text-gray-700 hover:bg-white"
                   }`}
                 >
-                  {val === "all" && <Layers className="w-4 h-4" />}
-                  {val === "custom" && <Clock className="w-4 h-4" />}
+                  {opt.value === "custom" && <Clock className="w-4 h-4" />}
                   {opt.label}
                 </button>
               );
             })}
           </div>
           {countOption === "custom" && (
-            <div className="mt-2 flex items-center gap-3 bg-white/90 rounded-2xl px-4 py-3">
+            <div className="mt-2 flex items-center gap-3 bg-white/90 rounded-2xl px-4 py-3 animate-fade-up">
               <span className="text-sm text-gray-500 shrink-0">Number of cards:</span>
               <input
                 data-testid="input-custom-count"
@@ -238,66 +224,56 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
               />
             </div>
           )}
-        </Section>
+        </FilterSection>
 
         {/* Shuffle */}
-        <Section title="Shuffle">
+        <FilterSection title="Options">
           <button
             data-testid="toggle-shuffle"
             onClick={() => setShuffle((v) => !v)}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all ${
-              shuffle ? "bg-green-600 text-white shadow-md" : "bg-white/90 text-gray-700"
+            className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl text-sm font-semibold transition-all active:scale-[0.98] ${
+              shuffle ? "bg-white/25 text-white" : "bg-white/90 text-gray-700 hover:bg-white"
             }`}
           >
             <span className="flex items-center gap-2">
               <Shuffle className="w-4 h-4" />
               Shuffle cards
             </span>
-            <span
-              className={`w-10 h-6 rounded-full relative transition-all ${
-                shuffle ? "bg-white/30" : "bg-gray-200"
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 w-5 h-5 rounded-full shadow transition-all ${
-                  shuffle ? "left-4 bg-white" : "left-0.5 bg-white"
-                }`}
-              />
+            {/* Toggle pill */}
+            <span className={`w-11 h-6 rounded-full relative transition-all duration-200 ${
+              shuffle ? "bg-green-400/60" : "bg-gray-200"
+            }`}>
+              <span className={`absolute top-0.5 w-5 h-5 rounded-full shadow transition-all duration-200 ${
+                shuffle ? "left-5 bg-white" : "left-0.5 bg-white"
+              }`} />
             </span>
           </button>
-        </Section>
+        </FilterSection>
 
         {/* Summary */}
-        <div
-          className="bg-white/20 rounded-3xl px-5 py-4 flex flex-col gap-3"
-          data-testid="session-summary"
-        >
-          <p className="text-white font-bold text-sm uppercase tracking-wide">Session Summary</p>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-            <SummaryRow label="Target words" value={summary.wordCount} />
-            <SummaryRow
-              label="Definition cards"
-              value={summary.definitionCount}
-              hidden={cardTypeFilter === "synonyms" || cardTypeFilter === "antonyms" || cardTypeFilter === "synonyms-antonyms"}
-            />
-            <SummaryRow
-              label="Synonym cards"
-              value={summary.synonymCount}
-              hidden={cardTypeFilter === "definitions" || cardTypeFilter === "antonyms"}
-            />
-            <SummaryRow
-              label="Antonym cards"
-              value={summary.antonymCount}
-              hidden={cardTypeFilter === "definitions" || cardTypeFilter === "synonyms"}
-            />
+        <div className="bg-white/15 rounded-3xl px-5 py-5" data-testid="session-summary">
+          <p className="text-white/60 text-[11px] font-bold uppercase tracking-widest mb-3">
+            Session Summary
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <SummaryRow label="Target words"     value={summary.wordCount} />
+            {cardTypeFilter !== "synonyms" && cardTypeFilter !== "antonyms" && cardTypeFilter !== "synonyms-antonyms" && (
+              <SummaryRow label="Definition cards" value={summary.definitionCount} />
+            )}
+            {cardTypeFilter !== "definitions" && cardTypeFilter !== "antonyms" && (
+              <SummaryRow label="Synonym cards"    value={summary.synonymCount} />
+            )}
+            {cardTypeFilter !== "definitions" && cardTypeFilter !== "synonyms" && (
+              <SummaryRow label="Antonym cards"    value={summary.antonymCount} />
+            )}
           </div>
-          <div className="border-t border-white/30 pt-2 flex items-center justify-between">
-            <span className="text-white/80 text-sm">Total cards in session</span>
-            <span className="text-white font-black text-xl" data-testid="summary-total">
+          <div className="mt-3 pt-3 border-t border-white/20 flex items-center justify-between">
+            <span className="text-white/70 text-sm">Total in session</span>
+            <span className="text-white font-black text-2xl tabular-nums" data-testid="summary-total">
               {summary.totalInSession}
               {config.cardCount !== "all" && summary.totalBeforeLimit > summary.totalInSession && (
-                <span className="text-white/60 font-normal text-sm ml-1">
-                  / {summary.totalBeforeLimit} available
+                <span className="text-white/50 font-normal text-sm ml-1.5">
+                  / {summary.totalBeforeLimit}
                 </span>
               )}
             </span>
@@ -311,16 +287,16 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
           onClick={() => onStart(config)}
           className={`w-full flex items-center justify-center gap-2 font-bold rounded-2xl py-4 text-base transition-all shadow-lg ${
             canStart
-              ? "bg-white text-green-700 hover:bg-gray-50 active:bg-gray-100 active:scale-95"
-              : "bg-white/30 text-white/50 cursor-not-allowed"
+              ? "bg-white text-green-700 hover:bg-gray-50 active:scale-[0.98] active:shadow-md"
+              : "bg-white/25 text-white/40 cursor-not-allowed"
           }`}
         >
           Start Review
           <ChevronRight className="w-5 h-5" />
         </button>
         {!canStart && (
-          <p className="text-white/70 text-xs text-center -mt-3">
-            No cards match your current filters.
+          <p className="text-white/60 text-xs text-center -mt-3">
+            No cards match your filters.
           </p>
         )}
       </div>
@@ -328,29 +304,20 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-white/80 text-xs font-bold uppercase tracking-widest px-1">{title}</p>
+      <p className="text-white/60 text-[11px] font-bold uppercase tracking-widest px-1">{title}</p>
       {children}
     </div>
   );
 }
 
-function SummaryRow({
-  label,
-  value,
-  hidden,
-}: {
-  label: string;
-  value: number;
-  hidden?: boolean;
-}) {
-  if (hidden) return null;
+function SummaryRow({ label, value }: { label: string; value: number }) {
   return (
-    <>
-      <span className="text-white/70">{label}</span>
-      <span className="text-white font-semibold text-right">{value}</span>
-    </>
+    <div className="flex items-center justify-between">
+      <span className="text-white/65 text-sm">{label}</span>
+      <span className="text-white font-semibold tabular-nums">{value}</span>
+    </div>
   );
 }
