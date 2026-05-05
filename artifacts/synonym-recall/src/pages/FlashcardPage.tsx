@@ -341,11 +341,8 @@ export default function FlashcardPage({ config, prebuiltDeck, onBack, onFinish }
 
             {/* Prompt content */}
             <div className="flex-1 flex items-center justify-center w-full px-1">
-              <p className={`text-center font-bold text-gray-900 leading-tight ${
-                card.cardType === "Definition"
-                  ? "text-[15px] font-normal text-gray-600 leading-relaxed"
-                  : "text-[32px] md:text-[36px] tracking-tight"
-              }`} data-testid="text-card-content">
+              <p className="text-center font-bold text-gray-900 leading-tight text-[32px] md:text-[36px] tracking-tight"
+                data-testid="text-card-content">
                 {card.promptText}
               </p>
             </div>
