@@ -11,6 +11,8 @@ export interface FlashCard {
   sourceStatus: WordStatus;
   relatedItem: string;
   targetWord: string;
+  /** Arabic translation of the related word, if available in vocab data */
+  arabic?: string;
 }
 
 function pickDistractor(allWords: string[], exclude: string): string {
@@ -48,6 +50,7 @@ export function generateCards(vocab: VocabItem[]): FlashCard[] {
         sourceStatus: syn.status,
         relatedItem: syn.word,
         targetWord: item.word,
+        arabic: syn.arabic,
       });
     }
 
@@ -61,6 +64,7 @@ export function generateCards(vocab: VocabItem[]): FlashCard[] {
         sourceStatus: ant.status,
         relatedItem: ant.word,
         targetWord: item.word,
+        arabic: ant.arabic,
       });
     }
   }

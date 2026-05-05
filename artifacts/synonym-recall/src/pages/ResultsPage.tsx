@@ -66,7 +66,7 @@ export default function ResultsPage({ results, onReviewMissed, onNewSession, onB
       style={{ background: "linear-gradient(160deg,#22c55e 0%,#16a34a 100%)" }}
       data-testid="results-page"
     >
-      <div className="w-full max-w-sm flex flex-col gap-4">
+      <div className="w-full max-w-sm md:max-w-md lg:max-w-lg flex flex-col gap-4">
 
         {/* Score hero */}
         <div className="bg-white rounded-3xl shadow-xl px-6 py-8 flex flex-col items-center gap-3 animate-scale-in">

@@ -108,7 +108,7 @@ export default function ProgressPage({ onBack }: Props) {
       style={{ background: "linear-gradient(160deg, #22c55e 0%, #16a34a 100%)" }}
       data-testid="progress-page"
     >
-      <div className="w-full max-w-sm px-4 pt-6 pb-10 flex flex-col gap-5">
+      <div className="w-full max-w-sm md:max-w-md lg:max-w-lg px-4 pt-6 pb-10 flex flex-col gap-5">
 
         {/* Header */}
         <div className="flex items-center gap-3">

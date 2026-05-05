@@ -86,7 +86,7 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
       style={{ background: "linear-gradient(160deg,#22c55e 0%,#16a34a 100%)" }}
       data-testid="setup-page"
     >
-      <div className="w-full max-w-sm px-4 pt-7 pb-10 flex flex-col gap-5">
+      <div className="w-full max-w-sm md:max-w-xl lg:max-w-2xl px-4 pt-7 pb-10 flex flex-col gap-5">
 
         {/* Header */}
         <div className="flex items-center justify-between">
