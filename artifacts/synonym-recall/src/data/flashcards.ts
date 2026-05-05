@@ -1,262 +1,74 @@
+import { mission1Set1, type VocabItem, type WordStatus } from "./vocab";
+
 export type CardType = "Definition" | "Synonym" | "Antonym";
 
 export interface FlashCard {
-  id: number;
-  targetWord: string;
+  id: string;
   cardType: CardType;
-  content: string;
-  wrongChoice: string;
-  hint: string;
-  pronunciation: string;
+  promptText: string;
+  correctWord: string;
+  incorrectWord: string;
+  sourceStatus: WordStatus;
+  relatedItem: string;
+  targetWord: string;
 }
 
-export const flashcards: FlashCard[] = [
-  {
-    id: 1,
-    targetWord: "Abound",
-    cardType: "Synonym",
-    content: "Teem",
-    wrongChoice: "Cursory",
-    hint: "Think of a river overflowing its banks",
-    pronunciation: "uh-BOWND",
-  },
-  {
-    id: 2,
-    targetWord: "Abound",
-    cardType: "Definition",
-    content: "To exist in large numbers or amounts; to be plentiful",
-    wrongChoice: "Laconic",
-    hint: "Associated with abundance and overflow",
-    pronunciation: "uh-BOWND",
-  },
-  {
-    id: 3,
-    targetWord: "Abound",
-    cardType: "Antonym",
-    content: "Scarce",
-    wrongChoice: "Prolific",
-    hint: "The opposite of plentiful",
-    pronunciation: "uh-BOWND",
-  },
-  {
-    id: 4,
-    targetWord: "Laconic",
-    cardType: "Synonym",
-    content: "Terse",
-    wrongChoice: "Garrulous",
-    hint: "Named after the Spartans of Laconia, known for brief speech",
-    pronunciation: "luh-KON-ik",
-  },
-  {
-    id: 5,
-    targetWord: "Laconic",
-    cardType: "Definition",
-    content: "Using very few words; brief and concise in expression",
-    wrongChoice: "Abound",
-    hint: "Spartans were famous for this quality",
-    pronunciation: "luh-KON-ik",
-  },
-  {
-    id: 6,
-    targetWord: "Laconic",
-    cardType: "Antonym",
-    content: "Verbose",
-    wrongChoice: "Terse",
-    hint: "The opposite of someone who uses many words",
-    pronunciation: "luh-KON-ik",
-  },
-  {
-    id: 7,
-    targetWord: "Ephemeral",
-    cardType: "Synonym",
-    content: "Transient",
-    wrongChoice: "Perpetual",
-    hint: "Like a mayfly that lives for only one day",
-    pronunciation: "ih-FEM-er-ul",
-  },
-  {
-    id: 8,
-    targetWord: "Ephemeral",
-    cardType: "Definition",
-    content: "Lasting for a very short time; short-lived and fleeting",
-    wrongChoice: "Laconic",
-    hint: "From Greek 'ephemeros' meaning lasting only a day",
-    pronunciation: "ih-FEM-er-ul",
-  },
-  {
-    id: 9,
-    targetWord: "Ephemeral",
-    cardType: "Antonym",
-    content: "Enduring",
-    wrongChoice: "Transient",
-    hint: "The opposite of something fleeting",
-    pronunciation: "ih-FEM-er-ul",
-  },
-  {
-    id: 10,
-    targetWord: "Garrulous",
-    cardType: "Synonym",
-    content: "Loquacious",
-    wrongChoice: "Taciturn",
-    hint: "Think of someone who can't stop talking at a party",
-    pronunciation: "GAIR-uh-lus",
-  },
-  {
-    id: 11,
-    targetWord: "Garrulous",
-    cardType: "Definition",
-    content: "Excessively talkative, especially on trivial matters",
-    wrongChoice: "Ephemeral",
-    hint: "Related to 'garble' — too many words spoil the message",
-    pronunciation: "GAIR-uh-lus",
-  },
-  {
-    id: 12,
-    targetWord: "Garrulous",
-    cardType: "Antonym",
-    content: "Reticent",
-    wrongChoice: "Loquacious",
-    hint: "The opposite of a chatterbox",
-    pronunciation: "GAIR-uh-lus",
-  },
-  {
-    id: 13,
-    targetWord: "Perfidious",
-    cardType: "Synonym",
-    content: "Treacherous",
-    wrongChoice: "Stalwart",
-    hint: "Like a friend who betrays you when you need them most",
-    pronunciation: "per-FID-ee-us",
-  },
-  {
-    id: 14,
-    targetWord: "Perfidious",
-    cardType: "Definition",
-    content: "Deceitful and untrustworthy; guilty of betrayal",
-    wrongChoice: "Garrulous",
-    hint: "Latin 'perfidia' means faithlessness",
-    pronunciation: "per-FID-ee-us",
-  },
-  {
-    id: 15,
-    targetWord: "Perfidious",
-    cardType: "Antonym",
-    content: "Loyal",
-    wrongChoice: "Treacherous",
-    hint: "The opposite of a traitor",
-    pronunciation: "per-FID-ee-us",
-  },
-  {
-    id: 16,
-    targetWord: "Ebullient",
-    cardType: "Synonym",
-    content: "Exuberant",
-    wrongChoice: "Somber",
-    hint: "Like bubbles rising in a glass of champagne",
-    pronunciation: "ih-BULL-yent",
-  },
-  {
-    id: 17,
-    targetWord: "Ebullient",
-    cardType: "Definition",
-    content: "Cheerful and full of energy; enthusiastically excited",
-    wrongChoice: "Perfidious",
-    hint: "From Latin 'ebullire' meaning to bubble up",
-    pronunciation: "ih-BULL-yent",
-  },
-  {
-    id: 18,
-    targetWord: "Ebullient",
-    cardType: "Antonym",
-    content: "Morose",
-    wrongChoice: "Exuberant",
-    hint: "The opposite of bubbly and energetic",
-    pronunciation: "ih-BULL-yent",
-  },
-  {
-    id: 19,
-    targetWord: "Recondite",
-    cardType: "Synonym",
-    content: "Esoteric",
-    wrongChoice: "Banal",
-    hint: "Knowledge hidden in dusty library archives",
-    pronunciation: "REK-un-dyte",
-  },
-  {
-    id: 20,
-    targetWord: "Recondite",
-    cardType: "Definition",
-    content: "Not known by many people; abstruse or obscure",
-    wrongChoice: "Ebullient",
-    hint: "Latin 'recondere' means to put away, to hide",
-    pronunciation: "REK-un-dyte",
-  },
-  {
-    id: 21,
-    targetWord: "Recondite",
-    cardType: "Antonym",
-    content: "Commonplace",
-    wrongChoice: "Esoteric",
-    hint: "The opposite of hidden or obscure knowledge",
-    pronunciation: "REK-un-dyte",
-  },
-  {
-    id: 22,
-    targetWord: "Obstinate",
-    cardType: "Synonym",
-    content: "Intransigent",
-    wrongChoice: "Malleable",
-    hint: "Like a mule that refuses to move no matter what",
-    pronunciation: "OB-stih-nit",
-  },
-  {
-    id: 23,
-    targetWord: "Obstinate",
-    cardType: "Definition",
-    content: "Stubbornly refusing to change one's opinion or chosen course",
-    wrongChoice: "Recondite",
-    hint: "Latin 'obstinare' means to stand firm",
-    pronunciation: "OB-stih-nit",
-  },
-  {
-    id: 24,
-    targetWord: "Obstinate",
-    cardType: "Antonym",
-    content: "Amenable",
-    wrongChoice: "Intransigent",
-    hint: "The opposite of a stubborn, immovable person",
-    pronunciation: "OB-stih-nit",
-  },
-  {
-    id: 25,
-    targetWord: "Querulous",
-    cardType: "Synonym",
-    content: "Petulant",
-    wrongChoice: "Sanguine",
-    hint: "Think of someone who whines about everything",
-    pronunciation: "KWER-yuh-lus",
-  },
-  {
-    id: 26,
-    targetWord: "Querulous",
-    cardType: "Definition",
-    content: "Complaining in a petulant or whining manner",
-    wrongChoice: "Obstinate",
-    hint: "From Latin 'queri' meaning to complain",
-    pronunciation: "KWER-yuh-lus",
-  },
-  {
-    id: 27,
-    targetWord: "Querulous",
-    cardType: "Antonym",
-    content: "Content",
-    wrongChoice: "Petulant",
-    hint: "The opposite of someone who constantly complains",
-    pronunciation: "KWER-yuh-lus",
-  },
-];
+function pickDistractor(allWords: string[], exclude: string): string {
+  const pool = allWords.filter((w) => w !== exclude);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
 
-export function shuffleCards(cards: FlashCard[]): FlashCard[] {
+export function generateCards(vocab: VocabItem[]): FlashCard[] {
+  const allWords = vocab.map((v) => v.word);
+  const cards: FlashCard[] = [];
+
+  for (const item of vocab) {
+    const distractor = () => pickDistractor(allWords, item.word);
+
+    for (let i = 0; i < item.definitions.length; i++) {
+      cards.push({
+        id: `${item.word}-def-${i}`,
+        cardType: "Definition",
+        promptText: item.definitions[i],
+        correctWord: item.word,
+        incorrectWord: distractor(),
+        sourceStatus: "Old",
+        relatedItem: item.definitions[i],
+        targetWord: item.word,
+      });
+    }
+
+    for (const syn of item.synonyms) {
+      cards.push({
+        id: `${item.word}-syn-${syn.word}`,
+        cardType: "Synonym",
+        promptText: syn.word,
+        correctWord: item.word,
+        incorrectWord: distractor(),
+        sourceStatus: syn.status,
+        relatedItem: syn.word,
+        targetWord: item.word,
+      });
+    }
+
+    for (const ant of item.antonyms) {
+      cards.push({
+        id: `${item.word}-ant-${ant.word}`,
+        cardType: "Antonym",
+        promptText: ant.word,
+        correctWord: item.word,
+        incorrectWord: distractor(),
+        sourceStatus: ant.status,
+        relatedItem: ant.word,
+        targetWord: item.word,
+      });
+    }
+  }
+
+  return cards;
+}
+
+export function shuffleCards<T>(cards: T[]): T[] {
   const shuffled = [...cards];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -264,3 +76,5 @@ export function shuffleCards(cards: FlashCard[]): FlashCard[] {
   }
   return shuffled;
 }
+
+export const allCards = generateCards(mission1Set1);
