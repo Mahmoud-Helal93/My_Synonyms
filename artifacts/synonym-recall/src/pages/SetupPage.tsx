@@ -13,14 +13,14 @@ import {
   BarChart2,
   Check,
 } from "lucide-react";
-import { mission1Set1 } from "@/data/vocab";
 import {
   type SessionConfig,
   type CardTypeFilter,
   type StatusFilter,
+  type SetFilter,
   DEFAULT_CONFIG,
 } from "@/types/session";
-import { computeSummary } from "@/utils/filterCards";
+import { computeSummary, getVocabPool, setLabel } from "@/utils/filterCards";
 
 interface Props {
   onStart: (config: SessionConfig) => void;
@@ -48,15 +48,29 @@ const COUNT_OPTIONS: { value: "all" | 10 | 20 | "custom"; label: string }[] = [
   { value: "custom", label: "Custom" },
 ];
 
-const ALL_WORDS = mission1Set1.map((v) => v.word);
+const SET_OPTIONS: { value: SetFilter; label: string }[] = [
+  { value: 1,     label: "Set 1" },
+  { value: 2,     label: "Set 2" },
+  { value: 3,     label: "Set 3" },
+  { value: "all", label: "All Sets" },
+];
 
 export default function SetupPage({ onStart, onViewProgress }: Props) {
+  const [setFilter,      setSetFilter]      = useState<SetFilter>(DEFAULT_CONFIG.setFilter);
   const [cardTypeFilter, setCardTypeFilter] = useState<CardTypeFilter>(DEFAULT_CONFIG.cardTypeFilter);
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>(DEFAULT_CONFIG.statusFilter);
   const [selectedWords,  setSelectedWords]  = useState<string[]>([]);
   const [countOption,    setCountOption]    = useState<"all" | 10 | 20 | "custom">("all");
   const [customCount,    setCustomCount]    = useState("15");
   const [shuffle,        setShuffle]        = useState(true);
+
+  const vocabPool = useMemo(() => getVocabPool(setFilter), [setFilter]);
+  const ALL_WORDS = useMemo(() => vocabPool.map((v) => v.word), [vocabPool]);
+
+  const handleSetChange = (newSet: SetFilter) => {
+    setSetFilter(newSet);
+    setSelectedWords([]);
+  };
 
   const config: SessionConfig = useMemo(() => {
     let cardCount: number | "all" = "all";
@@ -66,8 +80,8 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
     } else if (countOption !== "all") {
       cardCount = countOption;
     }
-    return { cardTypeFilter, statusFilter, selectedWords, cardCount, shuffle };
-  }, [cardTypeFilter, statusFilter, selectedWords, countOption, customCount, shuffle]);
+    return { setFilter, cardTypeFilter, statusFilter, selectedWords, cardCount, shuffle };
+  }, [setFilter, cardTypeFilter, statusFilter, selectedWords, countOption, customCount, shuffle]);
 
   const summary  = useMemo(() => computeSummary(config), [config]);
   const canStart = summary.totalInSession > 0;
@@ -94,7 +108,7 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
             <h1 className="text-white text-2xl font-black tracking-tight leading-tight">
               Synonym Recall
             </h1>
-            <p className="text-white/60 text-sm mt-0.5">Mission 1 · Set 1</p>
+            <p className="text-white/60 text-sm mt-0.5">Mission 1 · {setLabel(setFilter)}</p>
           </div>
           <button
             data-testid="button-progress"
@@ -105,6 +119,27 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
             Progress
           </button>
         </div>
+
+        {/* Set selector */}
+        <FilterSection title="Set">
+          <div className="grid grid-cols-4 gap-2">
+            {SET_OPTIONS.map((opt) => {
+              const active = setFilter === opt.value;
+              return (
+                <button
+                  key={String(opt.value)}
+                  data-testid={`filter-set-${String(opt.value)}`}
+                  onClick={() => handleSetChange(opt.value)}
+                  className={`flex items-center justify-center py-3 px-2 rounded-2xl text-xs font-bold transition-all active:scale-95 ${
+                    active ? "bg-white/25 text-white" : "bg-white/90 text-gray-700 hover:bg-white"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </FilterSection>
 
         {/* Card Type */}
         <FilterSection title="Card Type">
@@ -161,7 +196,7 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
               onClick={toggleAllWords}
               className="flex items-center gap-2 text-sm font-semibold text-green-700 bg-white/90 hover:bg-white rounded-2xl px-4 py-2.5 transition-all active:scale-[0.98]"
             >
-              {selectedWords.length === ALL_WORDS.length
+              {selectedWords.length === ALL_WORDS.length && selectedWords.length > 0
                 ? <CheckSquare className="w-4 h-4 text-green-600" />
                 : <Square className="w-4 h-4 text-gray-400" />}
               {selectedWords.length === 0
@@ -239,7 +274,6 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
               <Shuffle className="w-4 h-4" />
               Shuffle cards
             </span>
-            {/* Toggle pill */}
             <span className={`w-11 h-6 rounded-full relative transition-all duration-200 ${
               shuffle ? "bg-green-400/60" : "bg-gray-200"
             }`}>
@@ -256,7 +290,8 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
             Session Summary
           </p>
           <div className="flex flex-col gap-1.5">
-            <SummaryRow label="Target words"     value={summary.wordCount} />
+            <SummaryRow label="Mission"       value={`Mission 1 · ${setLabel(setFilter)}`} isText />
+            <SummaryRow label="Target words"  value={summary.wordCount} />
             {cardTypeFilter !== "synonyms" && cardTypeFilter !== "antonyms" && cardTypeFilter !== "synonyms-antonyms" && (
               <SummaryRow label="Definition cards" value={summary.definitionCount} />
             )}
@@ -266,6 +301,8 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
             {cardTypeFilter !== "definitions" && cardTypeFilter !== "synonyms" && (
               <SummaryRow label="Antonym cards"    value={summary.antonymCount} />
             )}
+            <SummaryRow label="New cards" value={summary.newCount} />
+            <SummaryRow label="Old cards" value={summary.oldCount} />
           </div>
           <div className="mt-3 pt-3 border-t border-white/20 flex items-center justify-between">
             <span className="text-white/70 text-sm">Total in session</span>
@@ -313,11 +350,13 @@ function FilterSection({ title, children }: { title: string; children: React.Rea
   );
 }
 
-function SummaryRow({ label, value }: { label: string; value: number }) {
+function SummaryRow({ label, value, isText }: { label: string; value: number | string; isText?: boolean }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-white/65 text-sm">{label}</span>
-      <span className="text-white font-semibold tabular-nums">{value}</span>
+      {isText
+        ? <span className="text-white font-semibold text-sm">{value}</span>
+        : <span className="text-white font-semibold tabular-nums">{value}</span>}
     </div>
   );
 }

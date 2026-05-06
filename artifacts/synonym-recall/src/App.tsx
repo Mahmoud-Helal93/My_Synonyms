@@ -37,6 +37,7 @@ export default function App() {
     return (
       <ResultsPage
         results={results}
+        config={config}
         onReviewMissed={(missedCards) =>
           setScreen({ view: "session", config, prebuiltDeck: missedCards })
         }
@@ -53,3 +54,6 @@ export default function App() {
     />
   );
 }
+
+// Suppress unused import warning — DEFAULT_CONFIG kept for future use
+void DEFAULT_CONFIG;

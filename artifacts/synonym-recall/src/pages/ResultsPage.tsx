@@ -11,11 +11,13 @@ import {
   ChevronRight,
   ArrowRight,
 } from "lucide-react";
-import { type CardResult } from "@/types/session";
+import { type CardResult, type SessionConfig } from "@/types/session";
 import { type FlashCard } from "@/data/flashcards";
+import { setLabel } from "@/utils/filterCards";
 
 interface Props {
   results: CardResult[];
+  config: SessionConfig;
   onReviewMissed: (missedCards: FlashCard[]) => void;
   onNewSession: () => void;
   onBackToSetup: () => void;
@@ -37,7 +39,7 @@ function getRelationship(card: FlashCard): string {
   }
 }
 
-export default function ResultsPage({ results, onReviewMissed, onNewSession, onBackToSetup }: Props) {
+export default function ResultsPage({ results, config, onReviewMissed, onNewSession, onBackToSetup }: Props) {
   const [showMissed, setShowMissed] = useState(true);
 
   const total        = results.length;
@@ -60,6 +62,8 @@ export default function ResultsPage({ results, onReviewMissed, onNewSession, onB
       ? "Good effort — keep practicing."
       : "Keep going — repetition builds mastery.";
 
+  const sessionLabel = `Mission 1 · ${setLabel(config.setFilter)}`;
+
   return (
     <div
       className="min-h-screen flex flex-col items-center px-4 pt-10 pb-10 animate-fade-in"
@@ -70,6 +74,7 @@ export default function ResultsPage({ results, onReviewMissed, onNewSession, onB
 
         {/* Score hero */}
         <div className="bg-white rounded-3xl shadow-xl px-6 py-8 flex flex-col items-center gap-3 animate-scale-in">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{sessionLabel}</p>
           <div className={`text-7xl font-black tabular-nums ${ringColor}`} data-testid="text-accuracy">
             {accuracy}%
           </div>
@@ -86,12 +91,12 @@ export default function ResultsPage({ results, onReviewMissed, onNewSession, onB
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-3">
           {[
-            { icon: <BookOpen    className="w-5 h-5 text-blue-500" />,   label: "Total Cards",   value: total,           id: "stat-total" },
-            { icon: <CheckCircle2 className="w-5 h-5 text-green-500" />, label: "Correct",       value: correctCount,    id: "stat-correct" },
-            { icon: <XCircle     className="w-5 h-5 text-red-400" />,    label: "Wrong",         value: wrongCount,      id: "stat-wrong" },
-            { icon: <TrendingUp  className="w-5 h-5 text-purple-500" />, label: "Accuracy",      value: `${accuracy}%`,  id: "stat-accuracy" },
-            { icon: <AlertCircle className="w-5 h-5 text-orange-400" />, label: "Missed Cards",  value: missedResults.length, id: "stat-missed-cards" },
-            { icon: <Target      className="w-5 h-5 text-rose-500" />,   label: "Missed Words",  value: missedWords.length,   id: "stat-missed-words" },
+            { icon: <BookOpen    className="w-5 h-5 text-blue-500" />,   label: "Total Cards",   value: total,                    id: "stat-total" },
+            { icon: <CheckCircle2 className="w-5 h-5 text-green-500" />, label: "Correct",       value: correctCount,             id: "stat-correct" },
+            { icon: <XCircle     className="w-5 h-5 text-red-400" />,    label: "Wrong",         value: wrongCount,               id: "stat-wrong" },
+            { icon: <TrendingUp  className="w-5 h-5 text-purple-500" />, label: "Accuracy",      value: `${accuracy}%`,           id: "stat-accuracy" },
+            { icon: <AlertCircle className="w-5 h-5 text-orange-400" />, label: "Missed Cards",  value: missedResults.length,     id: "stat-missed-cards" },
+            { icon: <Target      className="w-5 h-5 text-rose-500" />,   label: "Missed Words",  value: missedWords.length,       id: "stat-missed-words" },
           ].map(({ icon, label, value, id }) => (
             <div key={id} className="bg-white rounded-2xl px-4 py-3.5 flex items-center gap-3 shadow-sm">
               {icon}
@@ -142,15 +147,16 @@ export default function ResultsPage({ results, onReviewMissed, onNewSession, onB
               <div className="border-t border-gray-100 divide-y divide-gray-100 animate-fade-up">
                 {missedResults.map((r, i) => (
                   <div key={i} className="px-5 py-4 flex flex-col gap-2.5" data-testid={`missed-card-${i}`}>
-                    {/* Type + status */}
                     <div className="flex items-center gap-2">
                       <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${getPillStyle(r.card.cardType)}`}>
                         {r.card.cardType}
                       </span>
                       <span className="text-xs text-gray-400">{r.card.sourceStatus}</span>
+                      <span className="text-xs text-gray-300 ml-auto">
+                        M1·S{r.card.set}
+                      </span>
                     </div>
 
-                    {/* Prompt */}
                     <p className="text-sm font-semibold text-gray-800">
                       {r.card.cardType === "Definition"
                         ? r.card.promptText.length > 80
@@ -159,10 +165,8 @@ export default function ResultsPage({ results, onReviewMissed, onNewSession, onB
                         : `"${r.card.promptText}"`}
                     </p>
 
-                    {/* Relationship */}
                     <p className="text-xs text-gray-400 italic">{getRelationship(r.card)}</p>
 
-                    {/* Answer comparison */}
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="flex items-center gap-1 bg-red-50 text-red-500 text-xs font-medium px-2.5 py-1 rounded-lg">
                         <XCircle className="w-3.5 h-3.5" />

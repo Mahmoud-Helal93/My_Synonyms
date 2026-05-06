@@ -9,9 +9,12 @@ export type CardTypeFilter =
 
 export type StatusFilter = "all" | "new" | "old";
 
+export type SetFilter = 1 | 2 | 3 | "all";
+
 export type CardCountOption = "all" | 10 | 20 | "custom";
 
 export interface SessionConfig {
+  setFilter: SetFilter;
   cardTypeFilter: CardTypeFilter;
   statusFilter: StatusFilter;
   selectedWords: string[];
@@ -20,6 +23,7 @@ export interface SessionConfig {
 }
 
 export const DEFAULT_CONFIG: SessionConfig = {
+  setFilter: 1,
   cardTypeFilter: "all",
   statusFilter: "all",
   selectedWords: [],

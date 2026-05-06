@@ -1,9 +1,11 @@
-import { mission1Set1, type VocabItem, type WordStatus } from "./vocab";
+import { allVocab, type VocabItem, type WordStatus } from "./vocab";
 
 export type CardType = "Definition" | "Synonym" | "Antonym";
 
 export interface FlashCard {
   id: string;
+  mission: number;
+  set: number;
   cardType: CardType;
   promptText: string;
   correctWord: string;
@@ -11,12 +13,28 @@ export interface FlashCard {
   sourceStatus: WordStatus;
   relatedItem: string;
   targetWord: string;
-  /** Arabic translation of the related word, if available in vocab data */
   arabic?: string;
+}
+
+const slug = (s: string) => s.toLowerCase().replace(/\s+/g, "-");
+
+export function makeCardId(
+  mission: number,
+  set: number,
+  word: string,
+  cardType: "def" | "syn" | "ant",
+  related: string,
+  index?: number
+): string {
+  if (cardType === "def") {
+    return `mission-${mission}-set-${set}-${slug(word)}-def-${index ?? 0}`;
+  }
+  return `mission-${mission}-set-${set}-${slug(word)}-${cardType}-${slug(related)}`;
 }
 
 function pickDistractor(allWords: string[], exclude: string): string {
   const pool = allWords.filter((w) => w !== exclude);
+  if (pool.length === 0) return exclude;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
@@ -27,22 +45,26 @@ export function generateCards(vocab: VocabItem[]): FlashCard[] {
   for (const item of vocab) {
     const distractor = () => pickDistractor(allWords, item.word);
 
-    for (let i = 0; i < item.definitions.length; i++) {
+    item.definitions.forEach((def, i) => {
       cards.push({
-        id: `${item.word}-def-${i}`,
+        id: makeCardId(item.mission, item.set, item.word, "def", def, i),
+        mission: item.mission,
+        set: item.set,
         cardType: "Definition",
-        promptText: item.definitions[i],
+        promptText: def,
         correctWord: item.word,
         incorrectWord: distractor(),
         sourceStatus: "Old",
-        relatedItem: item.definitions[i],
+        relatedItem: def,
         targetWord: item.word,
       });
-    }
+    });
 
     for (const syn of item.synonyms) {
       cards.push({
-        id: `${item.word}-syn-${syn.word}`,
+        id: makeCardId(item.mission, item.set, item.word, "syn", syn.word),
+        mission: item.mission,
+        set: item.set,
         cardType: "Synonym",
         promptText: syn.word,
         correctWord: item.word,
@@ -56,7 +78,9 @@ export function generateCards(vocab: VocabItem[]): FlashCard[] {
 
     for (const ant of item.antonyms) {
       cards.push({
-        id: `${item.word}-ant-${ant.word}`,
+        id: makeCardId(item.mission, item.set, item.word, "ant", ant.word),
+        mission: item.mission,
+        set: item.set,
         cardType: "Antonym",
         promptText: ant.word,
         correctWord: item.word,
@@ -81,4 +105,5 @@ export function shuffleCards<T>(cards: T[]): T[] {
   return shuffled;
 }
 
-export const allCards = generateCards(mission1Set1);
+/** All cards across every mission and set — used by the Progress page */
+export const allCards = generateCards(allVocab);

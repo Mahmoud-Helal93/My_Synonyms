@@ -12,7 +12,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { allCards, type FlashCard } from "@/data/flashcards";
-import { mission1Set1 } from "@/data/vocab";
+import { mission1Set1, mission1Set2, mission1Set3, type VocabItem } from "@/data/vocab";
 import {
   loadProgress,
   resetProgress,
@@ -41,28 +41,68 @@ function MasteryDots({ score }: { score: number }) {
       {Array.from({ length: 5 }, (_, i) => (
         <div
           key={i}
-          className={`w-2 h-2 rounded-full ${
-            i < score ? "bg-green-500" : "bg-gray-200"
-          }`}
+          className={`w-2 h-2 rounded-full ${i < score ? "bg-green-500" : "bg-gray-200"}`}
         />
       ))}
     </div>
   );
 }
 
+type WordStat = {
+  word: string;
+  set: number;
+  totalCards: number;
+  reviewed: number;
+  mastered: number;
+  weak: number;
+  accuracy: number | null;
+  attempts: number;
+};
+
+function buildWordStats(vocab: VocabItem[], store: Record<string, CardProgress>): WordStat[] {
+  return vocab.map((v) => {
+    const vocabCards = allCards.filter(
+      (c) => c.targetWord === v.word && c.set === v.set
+    );
+    const progEntries = vocabCards
+      .map((c) => store[c.id])
+      .filter((p): p is CardProgress => !!p && p.attempts > 0);
+
+    const attempts = progEntries.reduce((s, p) => s + p.attempts, 0);
+    const correct  = progEntries.reduce((s, p) => s + p.correctAttempts, 0);
+
+    return {
+      word:       v.word,
+      set:        v.set,
+      totalCards: vocabCards.length,
+      reviewed:   progEntries.length,
+      mastered:   progEntries.filter(isMastered).length,
+      weak:       progEntries.filter(isWeak).length,
+      accuracy:   attempts > 0 ? Math.round((correct / attempts) * 100) : null,
+      attempts,
+    };
+  });
+}
+
+const SET_GROUPS = [
+  { setNum: 1, label: "Mission 1 · Set 1", vocab: mission1Set1 },
+  { setNum: 2, label: "Mission 1 · Set 2", vocab: mission1Set2 },
+  { setNum: 3, label: "Mission 1 · Set 3", vocab: mission1Set3 },
+];
+
 export default function ProgressPage({ onBack }: Props) {
-  const [store, setStore] = useState(loadProgress);
+  const [store, setStore]               = useState(loadProgress);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [expandedWord, setExpandedWord] = useState<string | null>(null);
 
-  const tracked = Object.values(store);
-  const attempted = tracked.filter((p) => p.attempts > 0);
+  const tracked      = Object.values(store);
+  const attempted    = tracked.filter((p) => p.attempts > 0);
   const totalAttempts = attempted.reduce((sum, p) => sum + p.attempts, 0);
-  const totalCorrect = attempted.reduce((sum, p) => sum + p.correctAttempts, 0);
+  const totalCorrect  = attempted.reduce((sum, p) => sum + p.correctAttempts, 0);
   const overallAccuracy =
     totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
   const masteredCount = attempted.filter(isMastered).length;
-  const weakCount = attempted.filter(isWeak).length;
+  const weakCount     = attempted.filter(isWeak).length;
 
   const weakCards = useMemo(() => {
     return allCards
@@ -71,30 +111,13 @@ export default function ProgressPage({ onBack }: Props) {
       .sort((a, b) => (a.progress?.masteryScore ?? 0) - (b.progress?.masteryScore ?? 0));
   }, [store]);
 
-  const wordStats = useMemo(() => {
-    return mission1Set1.map((vocab) => {
-      const vocabCards = allCards.filter((c) => c.targetWord === vocab.word);
-      const progEntries = vocabCards
-        .map((c) => store[c.id])
-        .filter((p): p is CardProgress => !!p && p.attempts > 0);
-
-      const attempts = progEntries.reduce((s, p) => s + p.attempts, 0);
-      const correct = progEntries.reduce((s, p) => s + p.correctAttempts, 0);
-      const mastered = progEntries.filter(isMastered).length;
-      const weak = progEntries.filter(isWeak).length;
-      const accuracy = attempts > 0 ? Math.round((correct / attempts) * 100) : null;
-
-      return {
-        word: vocab.word,
-        totalCards: vocabCards.length,
-        reviewed: progEntries.length,
-        mastered,
-        weak,
-        accuracy,
-        attempts,
-      };
-    });
-  }, [store]);
+  const setGroupStats = useMemo(() =>
+    SET_GROUPS.map((g) => ({
+      ...g,
+      wordStats: buildWordStats(g.vocab, store),
+    })),
+    [store]
+  );
 
   const handleReset = () => {
     resetProgress();
@@ -121,7 +144,7 @@ export default function ProgressPage({ onBack }: Props) {
           </button>
           <div>
             <h1 className="text-white font-black text-xl leading-tight">My Progress</h1>
-            <p className="text-white/60 text-xs">Mission 1 · Set 1</p>
+            <p className="text-white/60 text-xs">Mission 1 · All Sets</p>
           </div>
         </div>
 
@@ -157,95 +180,102 @@ export default function ProgressPage({ onBack }: Props) {
           </div>
         </div>
 
-        {/* Progress by word */}
-        <div className="flex flex-col gap-2">
-          <p className="text-white/80 text-xs font-bold uppercase tracking-widest px-1">By Word</p>
-          <div className="bg-white/90 rounded-3xl overflow-hidden divide-y divide-gray-100">
-            {wordStats.map((ws) => (
-              <div key={ws.word}>
-                <button
-                  data-testid={`word-row-${ws.word}`}
-                  onClick={() =>
-                    setExpandedWord((prev) => (prev === ws.word ? null : ws.word))
-                  }
-                  className="w-full flex items-center justify-between px-5 py-3.5 text-left"
-                >
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-bold text-gray-900 text-sm">{ws.word}</span>
-                    <span className="text-xs text-gray-400">
-                      {ws.reviewed}/{ws.totalCards} reviewed
-                      {ws.accuracy !== null ? ` · ${ws.accuracy}% accuracy` : ""}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {ws.mastered > 0 && (
-                      <span className="text-xs font-semibold text-green-600">
-                        {ws.mastered}✓
-                      </span>
-                    )}
-                    {ws.weak > 0 && (
-                      <span className="text-xs font-semibold text-red-500">
-                        {ws.weak}✗
-                      </span>
-                    )}
-                    {ws.reviewed === 0 && (
-                      <span className="text-xs text-gray-300">Not started</span>
-                    )}
-                    {expandedWord === ws.word ? (
-                      <ChevronDown className="w-4 h-4 text-gray-300" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4 text-gray-300" />
-                    )}
-                  </div>
-                </button>
+        {/* Progress by set → word */}
+        {setGroupStats.map((group) => (
+          <div key={group.setNum} className="flex flex-col gap-2">
+            <p className="text-white/80 text-xs font-bold uppercase tracking-widest px-1">
+              {group.label}
+            </p>
+            <div className="bg-white/90 rounded-3xl overflow-hidden divide-y divide-gray-100">
+              {group.wordStats.map((ws) => {
+                const expandKey = `${group.setNum}-${ws.word}`;
+                return (
+                  <div key={expandKey}>
+                    <button
+                      data-testid={`word-row-${ws.word}`}
+                      onClick={() =>
+                        setExpandedWord((prev) => (prev === expandKey ? null : expandKey))
+                      }
+                      className="w-full flex items-center justify-between px-5 py-3.5 text-left"
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-gray-900 text-sm">{ws.word}</span>
+                        <span className="text-xs text-gray-400">
+                          {ws.reviewed}/{ws.totalCards} reviewed
+                          {ws.accuracy !== null ? ` · ${ws.accuracy}% accuracy` : ""}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {ws.mastered > 0 && (
+                          <span className="text-xs font-semibold text-green-600">
+                            {ws.mastered}✓
+                          </span>
+                        )}
+                        {ws.weak > 0 && (
+                          <span className="text-xs font-semibold text-red-500">
+                            {ws.weak}✗
+                          </span>
+                        )}
+                        {ws.reviewed === 0 && (
+                          <span className="text-xs text-gray-300">Not started</span>
+                        )}
+                        {expandedWord === expandKey ? (
+                          <ChevronDown className="w-4 h-4 text-gray-300" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-gray-300" />
+                        )}
+                      </div>
+                    </button>
 
-                {expandedWord === ws.word && (
-                  <div className="bg-gray-50 px-5 pb-4 pt-2 flex flex-col gap-2">
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <MiniStat label="Total" value={ws.totalCards} />
-                      <MiniStat label="Mastered" value={ws.mastered} color="text-green-600" />
-                      <MiniStat label="Weak" value={ws.weak} color="text-red-500" />
-                    </div>
-                    {allCards
-                      .filter((c) => c.targetWord === ws.word)
-                      .map((card) => {
-                        const p = store[card.id];
-                        return (
-                          <div
-                            key={card.id}
-                            className="flex items-center justify-between gap-2 py-1.5 border-t border-gray-100 first:border-t-0"
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${getPillStyle(card.cardType)}`}>
-                                {card.cardType.slice(0, 3)}
-                              </span>
-                              <span className="text-xs text-gray-600 truncate">
-                                {card.cardType === "Definition"
-                                  ? card.promptText.slice(0, 28) + (card.promptText.length > 28 ? "…" : "")
-                                  : card.promptText}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {p && p.attempts > 0 ? (
-                                <>
-                                  <MasteryDots score={p.masteryScore} />
-                                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-lg ${masteryBg(p.masteryScore)}`}>
-                                    {masteryLabel(p.masteryScore)}
+                    {expandedWord === expandKey && (
+                      <div className="bg-gray-50 px-5 pb-4 pt-2 flex flex-col gap-2">
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <MiniStat label="Total"   value={ws.totalCards} />
+                          <MiniStat label="Mastered" value={ws.mastered} color="text-green-600" />
+                          <MiniStat label="Weak"     value={ws.weak}     color="text-red-500" />
+                        </div>
+                        {allCards
+                          .filter((c) => c.targetWord === ws.word && c.set === group.setNum)
+                          .map((card) => {
+                            const p = store[card.id];
+                            return (
+                              <div
+                                key={card.id}
+                                className="flex items-center justify-between gap-2 py-1.5 border-t border-gray-100 first:border-t-0"
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${getPillStyle(card.cardType)}`}>
+                                    {card.cardType.slice(0, 3)}
                                   </span>
-                                </>
-                              ) : (
-                                <span className="text-xs text-gray-300">Not tried</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                                  <span className="text-xs text-gray-600 truncate">
+                                    {card.cardType === "Definition"
+                                      ? card.promptText.slice(0, 28) + (card.promptText.length > 28 ? "…" : "")
+                                      : card.promptText}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {p && p.attempts > 0 ? (
+                                    <>
+                                      <MasteryDots score={p.masteryScore} />
+                                      <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-lg ${masteryBg(p.masteryScore)}`}>
+                                        {masteryLabel(p.masteryScore)}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="text-xs text-gray-300">Not tried</span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        ))}
 
         {/* Weak card list */}
         {weakCards.length > 0 && (
@@ -262,6 +292,7 @@ export default function ProgressPage({ onBack }: Props) {
                         {card.cardType}
                       </span>
                       <span className="text-xs text-gray-500 font-medium">{card.targetWord}</span>
+                      <span className="text-xs text-gray-300 ml-auto">M1·S{card.set}</span>
                     </div>
                     <p className="text-sm font-semibold text-gray-800 truncate">
                       {card.cardType === "Definition"
