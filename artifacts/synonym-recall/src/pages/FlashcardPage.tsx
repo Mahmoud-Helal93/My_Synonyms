@@ -57,6 +57,17 @@ function getPillStyle(cardType: FlashCard["cardType"]): string {
   }
 }
 
+function getCardAccent(cardType: FlashCard["cardType"]): { primary: string; secondary: string; pill: string } {
+  switch (cardType) {
+    case "Synonym":
+      return { primary: "#3B82F6", secondary: "#EF4444", pill: "bg-blue-500/20 text-blue-300" };
+    case "Antonym":
+      return { primary: "#EF4444", secondary: "#F59E0B", pill: "bg-red-500/20 text-red-300" };
+    case "Definition":
+      return { primary: "#F59E0B", secondary: "#3B82F6", pill: "bg-amber-500/20 text-amber-300" };
+  }
+}
+
 /** Returns the word to speak for a card (correctWord for definitions, promptText otherwise) */
 function getSpeakWord(card: FlashCard): string {
   return card.cardType === "Definition" ? card.correctWord : card.promptText;
@@ -207,8 +218,9 @@ export default function FlashcardPage({ config, prebuiltDeck, onBack, onFinish }
     );
   }
 
-  const progress   = (currentIndex / total) * 100;
+  const progress    = (currentIndex / total) * 100;
   const hintContent = getHintContent(card);
+  const accent      = getCardAccent(card.cardType);
 
   return (
     <div className="min-h-screen flex flex-col items-center"
@@ -308,80 +320,91 @@ export default function FlashcardPage({ config, prebuiltDeck, onBack, onFinish }
 
         {/* ── Flashcard (animated on index change) ── */}
         <div key={currentIndex} className="relative mt-2 mb-5 animate-card-enter">
-          {/* Stacked shadow layers */}
-          <div className="absolute inset-x-5 top-3 bottom-0 bg-white/40 rounded-[28px]" style={{ zIndex: 0 }} />
-          <div className="absolute inset-x-2 top-1.5 bottom-0 bg-white/65 rounded-[28px]" style={{ zIndex: 1 }} />
+          {/* Stacked depth layers */}
+          <div className="absolute inset-x-5 top-3 bottom-0 rounded-[28px]"
+            style={{ zIndex: 0, background: "rgba(5,12,30,0.45)" }} />
+          <div className="absolute inset-x-2 top-1.5 bottom-0 rounded-[28px]"
+            style={{ zIndex: 1, background: "rgba(5,12,30,0.70)" }} />
 
-          {/* Main white card */}
-          <div className="relative bg-white rounded-[28px] shadow-[0_8px_32px_rgba(0,0,0,0.14)] px-7 pt-6 pb-6 flex flex-col items-center gap-4"
-            style={{ zIndex: 2, minHeight: "278px" }}
+          {/* Main dark card */}
+          <div className="relative rounded-[28px] overflow-hidden flex flex-col"
+            style={{ zIndex: 2, minHeight: "278px", background: "#0F172A",
+                     boxShadow: "0 8px 40px rgba(0,0,0,0.45)" }}
             data-testid="flashcard">
 
-            {/* Type pill + mastery badge */}
-            <div className="flex items-center gap-2 flex-wrap justify-center">
-              <span className={`text-xs font-semibold px-3 py-1 rounded-full tracking-wide ${getPillStyle(card.cardType)}`}
-                data-testid="text-card-type">
-                {card.cardType}
-              </span>
-              {/* ── Review mode badge (mastery level) ── */}
-              {hasProgress ? (
-                <span
-                  className={`text-xs font-semibold px-2.5 py-1 rounded-full ${masteryBg(cardProgress.masteryScore)}`}
-                  data-testid="text-mastery-badge"
-                  title={`Mastery score: ${cardProgress.masteryScore}/5`}>
-                  {masteryLabel(cardProgress.masteryScore)}
-                </span>
-              ) : (
-                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-400"
-                  data-testid="text-card-status">
-                  {card.sourceStatus}
-                </span>
-              )}
+            {/* ── Colored accent bar ── */}
+            <div className="flex h-[5px] w-full shrink-0">
+              <div className="flex-1" style={{ background: accent.primary }} />
+              <div className="w-20" style={{ background: accent.secondary }} />
             </div>
 
-            {/* Prompt content */}
-            <div className="flex-1 flex items-center justify-center w-full px-1">
-              <p className="text-center font-bold text-gray-900 leading-tight text-[32px] md:text-[36px] tracking-tight"
-                data-testid="text-card-content">
-                {card.promptText}
-              </p>
-            </div>
+            {/* Card body */}
+            <div className="px-7 pt-5 pb-6 flex flex-col items-center gap-4 flex-1">
 
-            {/* ── Hint (first letter + Arabic if available) ── */}
-            {showHint && (
-              <div className="w-full bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex flex-col items-center gap-1 animate-fade-up"
-                data-testid="text-hint">
-                <p className="text-amber-900 font-black text-lg tracking-[0.25em]">
-                  {hintContent.letterHint}
-                </p>
-                {hintContent.arabic && (
-                  <p className="text-amber-700 text-xs" dir="rtl">
-                    {hintContent.arabic}
-                  </p>
-                )}
-                {!hintContent.arabic && (
-                  <p className="text-amber-600 text-xs">First letter of the answer</p>
+              {/* Type pill + mastery badge */}
+              <div className="flex items-center gap-2 flex-wrap justify-center">
+                <span className={`text-xs font-bold px-3 py-1 rounded-full tracking-wide ${accent.pill}`}
+                  data-testid="text-card-type">
+                  {card.cardType}
+                </span>
+                {hasProgress ? (
+                  <span
+                    className={`text-xs font-semibold px-2.5 py-1 rounded-full ${masteryBg(cardProgress.masteryScore)}`}
+                    data-testid="text-mastery-badge"
+                    title={`Mastery score: ${cardProgress.masteryScore}/5`}>
+                    {masteryLabel(cardProgress.masteryScore)}
+                  </span>
+                ) : (
+                  <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-white/10 text-white/40"
+                    data-testid="text-card-status">
+                    {card.sourceStatus}
+                  </span>
                 )}
               </div>
-            )}
 
-            {/* Icon buttons */}
-            <div className="flex gap-3">
-              {/* Speaker: pronounces target word for definition cards, prompt word otherwise */}
-              <button data-testid="button-speaker"
-                onClick={() => speak(getSpeakWord(card))}
-                title={`Pronounce "${getSpeakWord(card)}"`}
-                className="w-11 h-11 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-colors active:scale-90">
-                <Volume2 className="w-5 h-5 text-gray-500" />
-              </button>
-              <button data-testid="button-hint"
-                onClick={() => setShowHint((v) => !v)}
-                title="Show hint"
-                className={`w-11 h-11 flex items-center justify-center rounded-full transition-colors active:scale-90 ${
-                  showHint ? "bg-amber-100" : "bg-gray-50 hover:bg-gray-100"
-                }`}>
-                <Lightbulb className={`w-5 h-5 ${showHint ? "text-amber-500" : "text-gray-500"}`} />
-              </button>
+              {/* Prompt word */}
+              <div className="flex-1 flex items-center justify-center w-full px-1">
+                <p className="text-center font-extrabold text-white leading-tight text-[32px] md:text-[38px] tracking-tight"
+                  data-testid="text-card-content">
+                  {card.promptText}
+                </p>
+              </div>
+
+              {/* ── Hint ── */}
+              {showHint && (
+                <div className="w-full bg-white/8 border border-white/10 rounded-2xl px-4 py-3 flex flex-col items-center gap-1 animate-fade-up"
+                  data-testid="text-hint">
+                  <p className="text-white font-black text-lg tracking-[0.25em]">
+                    {hintContent.letterHint}
+                  </p>
+                  {hintContent.arabic && (
+                    <p className="text-white/60 text-xs" dir="rtl">
+                      {hintContent.arabic}
+                    </p>
+                  )}
+                  {!hintContent.arabic && (
+                    <p className="text-white/40 text-xs">First letter of the answer</p>
+                  )}
+                </div>
+              )}
+
+              {/* Speaker + Hint buttons */}
+              <div className="flex gap-3">
+                <button data-testid="button-speaker"
+                  onClick={() => speak(getSpeakWord(card))}
+                  title={`Pronounce "${getSpeakWord(card)}"`}
+                  className="w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/18 transition-colors active:scale-90">
+                  <Volume2 className="w-5 h-5 text-white/70" />
+                </button>
+                <button data-testid="button-hint"
+                  onClick={() => setShowHint((v) => !v)}
+                  title="Show hint"
+                  className={`w-11 h-11 flex items-center justify-center rounded-full transition-colors active:scale-90 ${
+                    showHint ? "bg-amber-500/25" : "bg-white/10 hover:bg-white/18"
+                  }`}>
+                  <Lightbulb className={`w-5 h-5 ${showHint ? "text-amber-400" : "text-white/70"}`} />
+                </button>
+              </div>
             </div>
           </div>
         </div>

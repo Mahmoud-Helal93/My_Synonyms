@@ -79,14 +79,6 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
   const summary  = useMemo(() => computeSummary(config), [config]);
   const canStart = summary.totalInSession > 0;
 
-  const toggleWord = (word: string) =>
-    setSelectedWords((prev) =>
-      prev.includes(word) ? prev.filter((w) => w !== word) : [...prev, word]
-    );
-
-  const toggleAllWords = () =>
-    setSelectedWords((prev) => (prev.length === ALL_WORDS.length ? [] : [...ALL_WORDS]));
-
   return (
     <div
       className="min-h-screen flex flex-col items-center animate-fade-in"
