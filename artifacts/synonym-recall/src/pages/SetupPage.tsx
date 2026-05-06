@@ -8,8 +8,6 @@ import {
   Clock,
   Shuffle,
   ChevronRight,
-  CheckSquare,
-  Square,
   BarChart2,
   Check,
 } from "lucide-react";
@@ -20,7 +18,7 @@ import {
   type SetFilter,
   DEFAULT_CONFIG,
 } from "@/types/session";
-import { computeSummary, getVocabPool, setLabel } from "@/utils/filterCards";
+import { computeSummary, setLabel } from "@/utils/filterCards";
 
 interface Props {
   onStart: (config: SessionConfig) => void;
@@ -59,17 +57,12 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
   const [setFilter,      setSetFilter]      = useState<SetFilter>(DEFAULT_CONFIG.setFilter);
   const [cardTypeFilter, setCardTypeFilter] = useState<CardTypeFilter>(DEFAULT_CONFIG.cardTypeFilter);
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>(DEFAULT_CONFIG.statusFilter);
-  const [selectedWords,  setSelectedWords]  = useState<string[]>([]);
   const [countOption,    setCountOption]    = useState<"all" | 10 | 20 | "custom">("all");
   const [customCount,    setCustomCount]    = useState("15");
   const [shuffle,        setShuffle]        = useState(true);
 
-  const vocabPool = useMemo(() => getVocabPool(setFilter), [setFilter]);
-  const ALL_WORDS = useMemo(() => vocabPool.map((v) => v.word), [vocabPool]);
-
   const handleSetChange = (newSet: SetFilter) => {
     setSetFilter(newSet);
-    setSelectedWords([]);
   };
 
   const config: SessionConfig = useMemo(() => {
@@ -80,8 +73,8 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
     } else if (countOption !== "all") {
       cardCount = countOption;
     }
-    return { setFilter, cardTypeFilter, statusFilter, selectedWords, cardCount, shuffle };
-  }, [setFilter, cardTypeFilter, statusFilter, selectedWords, countOption, customCount, shuffle]);
+    return { setFilter, cardTypeFilter, statusFilter, selectedWords: [], cardCount, shuffle };
+  }, [setFilter, cardTypeFilter, statusFilter, countOption, customCount, shuffle]);
 
   const summary  = useMemo(() => computeSummary(config), [config]);
   const canStart = summary.totalInSession > 0;
@@ -185,43 +178,6 @@ export default function SetupPage({ onStart, onViewProgress }: Props) {
                 </button>
               );
             })}
-          </div>
-        </FilterSection>
-
-        {/* Word Filter */}
-        <FilterSection title="Words">
-          <div className="flex flex-col gap-2">
-            <button
-              data-testid="filter-words-toggle-all"
-              onClick={toggleAllWords}
-              className="flex items-center gap-2 text-sm font-semibold text-green-700 bg-white/90 hover:bg-white rounded-2xl px-4 py-2.5 transition-all active:scale-[0.98]"
-            >
-              {selectedWords.length === ALL_WORDS.length && selectedWords.length > 0
-                ? <CheckSquare className="w-4 h-4 text-green-600" />
-                : <Square className="w-4 h-4 text-gray-400" />}
-              {selectedWords.length === 0
-                ? "All words (default)"
-                : selectedWords.length === ALL_WORDS.length
-                ? "Deselect all"
-                : `${selectedWords.length} of ${ALL_WORDS.length} selected`}
-            </button>
-            <div className="flex flex-wrap gap-2">
-              {ALL_WORDS.map((word) => {
-                const active = selectedWords.includes(word);
-                return (
-                  <button
-                    key={word}
-                    data-testid={`filter-word-${word}`}
-                    onClick={() => toggleWord(word)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
-                      active ? "bg-white/30 text-white" : "bg-white/90 text-gray-600 hover:bg-white"
-                    }`}
-                  >
-                    {word}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </FilterSection>
 
